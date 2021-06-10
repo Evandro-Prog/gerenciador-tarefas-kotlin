@@ -4,7 +4,9 @@ import br.com.devaria.projetos.gerenciador.de.tarefas.authorization
 import br.com.devaria.projetos.gerenciador.de.tarefas.bearer
 import br.com.devaria.projetos.gerenciador.de.tarefas.impl.UsuarioDetalheImp
 import br.com.devaria.projetos.gerenciador.de.tarefas.models.Usuario
+import br.com.devaria.projetos.gerenciador.de.tarefas.repositories.UsuarioRepository
 import br.com.devaria.projetos.gerenciador.de.tarefas.utils.JWTUtils
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
@@ -14,7 +16,7 @@ import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-class JWTAutorizadorFilter(authenticationManager : AuthenticationManager, val jwtUtils: JWTUtils)
+class JWTAutorizadorFilter(authenticationManager : AuthenticationManager, val jwtUtils: JWTUtils, val usuarioRepository: UsuarioRepository)
     : BasicAuthenticationFilter(authenticationManager) {
 
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain) {
@@ -33,7 +35,7 @@ class JWTAutorizadorFilter(authenticationManager : AuthenticationManager, val jw
         if(jwtUtils.isTokenValido(token)) {
             val idString = jwtUtils.getUsuarioId(token)
             if(!idString.isNullOrBlank() && idString.isNullOrEmpty()) {
-                val usuario = Usuario(idString.toLong(), "Usuário Teste", "admin@admin.com", "Admin12342@")
+                val usuario = usuarioRepository.findByIdOrNull(idString.toLong()) ?: throw UsernameNotFoundException("")
                 val usuarioImpl = UsuarioDetalheImp(usuario)
                 return UsernamePasswordAuthenticationToken(usuarioImpl, null, usuarioImpl.authorities)
             }
